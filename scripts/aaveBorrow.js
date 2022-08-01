@@ -18,9 +18,12 @@ async function main() {
     await lendingPool.deposit(wethTokenAddress, AMOUNT, deployer, 0)
     console.log("WETH deposited!!!")
     // Borrow stats
+    // Esto es let porque va a estar variando con el tiempo
     let { availableBorrowsETH, totalDebtETH } = await getBorrowUserData(lendingPool, deployer)
+    const daiPrice = await getDaiPrice()
 }
 
+// Una funcion para obtener la pool
 async function getLendingPool(account) {
     const lendingPoolAddressesProvider = await ethers.getContractAt(
         "ILendingPoolAddressesProvider",
@@ -32,6 +35,7 @@ async function getLendingPool(account) {
     return lendingPool
 }
 
+// Una funcion para aprobar a alguien el uso de los token
 async function approveErc20(erc20Address, spenderAddress, amount, signer) {
     const erc20Token = await ethers.getContractAt("IERC20", erc20Address, signer)
     txResponse = await erc20Token.approve(spenderAddress, amount)
@@ -39,6 +43,7 @@ async function approveErc20(erc20Address, spenderAddress, amount, signer) {
     console.log("Approved!!!")
 }
 
+// Una funcion para obtener las estadisticas del usuario de aave
 async function getBorrowUserData(lendingPool, account) {
     const {
         totalCollateralETH,
@@ -49,6 +54,21 @@ async function getBorrowUserData(lendingPool, account) {
     console.log(`You have ${totalDebtETH} worth of ETH borrowed.`)
     console.log(`You can borrow ${availableBorrowsETH} worth of ETH`)
     return { availableBorrowsETH, totalDebtETH }
+}
+
+// Una funcion para obtener el precio de DAI/ETH con chainlink
+async function getDaiPrice() {
+    const daiEthPriceFeed = await ethers.getContractAt(
+        "AggregatorV3Interface",
+        networkConfig[chainId].daiEthPriceFeed
+    )
+    /*
+     * La funcion latestRoundData devuelve muchas cosas el [1] es una forma de decir que solo
+     * quiero el valor de retorno en el indice 1. Recuerda que el indice empieza a contarse en 0
+     */
+    const price = (await daiEthPriceFeed.latestRoundData())[1]
+    console.log(`The DAI/ETH price is ${price.toString()}`)
+    return price
 }
 
 main()
