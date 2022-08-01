@@ -21,6 +21,11 @@ async function main() {
     // Esto es let porque va a estar variando con el tiempo
     let { availableBorrowsETH, totalDebtETH } = await getBorrowUserData(lendingPool, deployer)
     const daiPrice = await getDaiPrice()
+    // Multiplico por 0.95 para pedir prestado solo el 95% de lo que puedo
+    const amountDaiToBorrow = availableBorrowsETH.toString() * 0.95 * (1 / daiPrice.toNumber())
+    const amountDaiToBorrowWei = ethers.utils.parseEther(amountDaiToBorrow.toString())
+    console.log(`You can borrow ${amountDaiToBorrow.toString()} DAI`)
+    await borrowDai(networkConfig[chainId].daiToken, lendingPool, amountDaiToBorrowWei, deployer)
 }
 
 // Una funcion para obtener la pool
@@ -69,6 +74,13 @@ async function getDaiPrice() {
     const price = (await daiEthPriceFeed.latestRoundData())[1]
     console.log(`The DAI/ETH price is ${price.toString()}`)
     return price
+}
+
+// Una funcion para pedir prestado DAI
+async function borrowDai(daiAddress, lendingPool, amountDaiToBorrow, account) {
+    const tx = await lendingPool.borrow(daiAddress, amountDaiToBorrow, 1, 0, account)
+    await tx.wait(1)
+    console.log("You've borrowed some DAI!")
 }
 
 main()
