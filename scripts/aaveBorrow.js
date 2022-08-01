@@ -6,6 +6,7 @@ const { BigNumber } = require("@ethersproject/bignumber")
 const chainId = network.config.chainId
 
 async function main() {
+    // documentacion de AAVE https://docs.aave.com/developers/v/2.0/
     // Deposito ETH y obtengo WETH
     await getWeth()
     const { deployer } = await getNamedAccounts()
@@ -16,6 +17,8 @@ async function main() {
     console.log("Depositing WETH")
     await lendingPool.deposit(wethTokenAddress, AMOUNT, deployer, 0)
     console.log("WETH deposited!!!")
+    // Borrow stats
+    let { availableBorrowsETH, totalDebtETH } = await getBorrowUserData(lendingPool, deployer)
 }
 
 async function getLendingPool(account) {
@@ -34,6 +37,18 @@ async function approveErc20(erc20Address, spenderAddress, amount, signer) {
     txResponse = await erc20Token.approve(spenderAddress, amount)
     await txResponse.wait(1)
     console.log("Approved!!!")
+}
+
+async function getBorrowUserData(lendingPool, account) {
+    const {
+        totalCollateralETH,
+        totalDebtETH,
+        availableBorrowsETH
+    } = await lendingPool.getUserAccountData(account)
+    console.log(`You have ${totalCollateralETH} worth of ETH deposited.`)
+    console.log(`You have ${totalDebtETH} worth of ETH borrowed.`)
+    console.log(`You can borrow ${availableBorrowsETH} worth of ETH`)
+    return { availableBorrowsETH, totalDebtETH }
 }
 
 main()
