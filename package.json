@@ -27,6 +27,7 @@
   "scripts": {
     "lint": "solhint 'contracts/*.sol'",
     "lint:fix": "solhint 'contracts/**/*.sol' --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "borrow": "yarn hardhat run scripts/aaveBorrow.js"
   }
 }
