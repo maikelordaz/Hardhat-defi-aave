@@ -26,6 +26,9 @@ async function main() {
     const amountDaiToBorrowWei = ethers.utils.parseEther(amountDaiToBorrow.toString())
     console.log(`You can borrow ${amountDaiToBorrow.toString()} DAI`)
     await borrowDai(networkConfig[chainId].daiToken, lendingPool, amountDaiToBorrowWei, deployer)
+    await getBorrowUserData(lendingPool, deployer)
+    await repay(amountDaiToBorrowWei, networkConfig[chainId].daiToken, lendingPool, deployer)
+    await getBorrowUserData(lendingPool, deployer)
 }
 
 // Una funcion para obtener la pool
@@ -81,6 +84,14 @@ async function borrowDai(daiAddress, lendingPool, amountDaiToBorrow, account) {
     const tx = await lendingPool.borrow(daiAddress, amountDaiToBorrow, 1, 0, account)
     await tx.wait(1)
     console.log("You've borrowed some DAI!")
+}
+
+// Una funcion para pagar el prestamo
+async function repay(amount, daiAddress, lendingPool, account) {
+    await approveErc20(daiAddress, lendingPool.address, amount, account)
+    const tx = await lendingPool.repay(daiAddress, amount, 1, account)
+    await tx.wait(1)
+    console.log("Repaid!")
 }
 
 main()
