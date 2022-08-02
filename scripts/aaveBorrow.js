@@ -6,22 +6,17 @@ const { BigNumber } = require("@ethersproject/bignumber")
 const chainId = network.config.chainId
 
 async function main() {
-    // documentacion de AAVE https://docs.aave.com/developers/v/2.0/
-    // Deposito ETH y obtengo WETH
+    // AAVE docs https://docs.aave.com/developers/v/2.0/
     await getWeth()
     const { deployer } = await getNamedAccounts()
     const lendingPool = await getLendingPool(deployer)
     const wethTokenAddress = networkConfig[chainId].wethToken
-    // Le doy aprobacion a la lendingPool que use mis WETH
     await approveErc20(wethTokenAddress, lendingPool.address, AMOUNT, deployer)
     console.log("Depositing WETH")
     await lendingPool.deposit(wethTokenAddress, AMOUNT, deployer, 0)
     console.log("WETH deposited!!!")
-    // Borrow stats
-    // Esto es let porque va a estar variando con el tiempo
     let { availableBorrowsETH, totalDebtETH } = await getBorrowUserData(lendingPool, deployer)
     const daiPrice = await getDaiPrice()
-    // Multiplico por 0.95 para pedir prestado solo el 95% de lo que puedo
     const amountDaiToBorrow = availableBorrowsETH.toString() * 0.95 * (1 / daiPrice.toNumber())
     const amountDaiToBorrowWei = ethers.utils.parseEther(amountDaiToBorrow.toString())
     console.log(`You can borrow ${amountDaiToBorrow.toString()} DAI`)
@@ -31,7 +26,6 @@ async function main() {
     await getBorrowUserData(lendingPool, deployer)
 }
 
-// Una funcion para obtener la pool
 async function getLendingPool(account) {
     const lendingPoolAddressesProvider = await ethers.getContractAt(
         "ILendingPoolAddressesProvider",
@@ -43,7 +37,6 @@ async function getLendingPool(account) {
     return lendingPool
 }
 
-// Una funcion para aprobar a alguien el uso de los token
 async function approveErc20(erc20Address, spenderAddress, amount, signer) {
     const erc20Token = await ethers.getContractAt("IERC20", erc20Address, signer)
     txResponse = await erc20Token.approve(spenderAddress, amount)
@@ -51,7 +44,6 @@ async function approveErc20(erc20Address, spenderAddress, amount, signer) {
     console.log("Approved!!!")
 }
 
-// Una funcion para obtener las estadisticas del usuario de aave
 async function getBorrowUserData(lendingPool, account) {
     const {
         totalCollateralETH,
@@ -64,7 +56,6 @@ async function getBorrowUserData(lendingPool, account) {
     return { availableBorrowsETH, totalDebtETH }
 }
 
-// Una funcion para obtener el precio de DAI/ETH con chainlink
 async function getDaiPrice() {
     const daiEthPriceFeed = await ethers.getContractAt(
         "AggregatorV3Interface",
@@ -79,14 +70,12 @@ async function getDaiPrice() {
     return price
 }
 
-// Una funcion para pedir prestado DAI
 async function borrowDai(daiAddress, lendingPool, amountDaiToBorrow, account) {
     const tx = await lendingPool.borrow(daiAddress, amountDaiToBorrow, 1, 0, account)
     await tx.wait(1)
     console.log("You've borrowed some DAI!")
 }
 
-// Una funcion para pagar el prestamo
 async function repay(amount, daiAddress, lendingPool, account) {
     await approveErc20(daiAddress, lendingPool.address, amount, account)
     const tx = await lendingPool.repay(daiAddress, amount, 1, account)
